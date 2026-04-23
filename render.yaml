@@ -1,0 +1,62 @@
+# Render Blueprint for the full stack.
+#
+# Four services, one repo:
+#   - sudoku-api        FastAPI + PuLP/CBC LP solver (CPU-bound, Web Service)
+#   - canvas-api        FastAPI + httpx wrapper over Canvas REST (I/O-bound, Web Service)
+#   - sudoku-web        Vite/React student SPA (Static Site, free)
+#   - canvas-web        Vite/React teacher SPA (Static Site, free)
+#
+# The two backends are split because their profiles differ: sudoku-api
+# is CPU-bound LP (sync worker), canvas-api is pure async I/O glue.
+# Static sites stay free forever; only promote the Web Services off
+# free tier once cold starts become visible to real users.
+
+services:
+  - type: web
+    name: sudoku-api
+    env: python
+    plan: free                      # bump to starter ($7/mo) when cold starts matter
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+
+  - type: web
+    name: canvas-api
+    env: python
+    plan: free                      # bump to starter once teachers rely on it
+    rootDir: backend-canvas
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: CANVAS_BASE_URL
+        value: https://canvas.instructure.com
+      - key: CANVAS_ALLOWED_ORIGINS
+        sync: false                 # set per-env in the Render dashboard
+
+  - type: static
+    name: sudoku-web
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://sudoku-api.onrender.com
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+  - type: static
+    name: canvas-web
+    rootDir: frontend-canvas
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://canvas-api.onrender.com
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
