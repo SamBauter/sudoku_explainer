@@ -3,18 +3,18 @@
 # Four services, one repo:
 #   - sudoku-api        FastAPI + PuLP/CBC LP solver (CPU-bound, Web Service)
 #   - canvas-api        FastAPI + httpx wrapper over Canvas REST (I/O-bound, Web Service)
-#   - sudoku-web        Vite/React student SPA (Static Site, free)
-#   - canvas-web        Vite/React teacher SPA (Static Site, free)
+#   - sudoku-web        Vite/React student SPA (static site, free)
+#   - canvas-web        Vite/React teacher SPA (static site, free)
 #
-# The two backends are split because their profiles differ: sudoku-api
-# is CPU-bound LP (sync worker), canvas-api is pure async I/O glue.
-# Static sites stay free forever; only promote the Web Services off
-# free tier once cold starts become visible to real users.
+# Render's current Blueprint spec uses `type: web` for everything that
+# serves traffic, with `runtime: static` to opt a service into the
+# static-site configuration. The older `type: static` / `env: python`
+# spelling is no longer accepted.
 
 services:
   - type: web
     name: sudoku-api
-    env: python
+    runtime: python
     plan: free                      # bump to starter ($7/mo) when cold starts matter
     rootDir: backend
     buildCommand: pip install -r requirements.txt
@@ -23,7 +23,7 @@ services:
 
   - type: web
     name: canvas-api
-    env: python
+    runtime: python
     plan: free                      # bump to starter once teachers rely on it
     rootDir: backend-canvas
     buildCommand: pip install -r requirements.txt
@@ -35,8 +35,9 @@ services:
       - key: CANVAS_ALLOWED_ORIGINS
         sync: false                 # set per-env in the Render dashboard
 
-  - type: static
+  - type: web
     name: sudoku-web
+    runtime: static
     rootDir: frontend
     buildCommand: npm ci && npm run build
     staticPublishPath: ./dist
@@ -48,8 +49,9 @@ services:
         source: /*
         destination: /index.html
 
-  - type: static
+  - type: web
     name: canvas-web
+    runtime: static
     rootDir: frontend-canvas
     buildCommand: npm ci && npm run build
     staticPublishPath: ./dist
