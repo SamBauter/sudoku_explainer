@@ -45,8 +45,11 @@ services:
     buildCommand: npm ci && npm run build
     staticPublishPath: ./dist
     envVars:
+      # Render may append a hash to service hostnames if the base name is
+      # taken (e.g. sudoku-api-abcd.onrender.com). Set the real URL in the
+      # dashboard and trigger a Manual Deploy so Vite re-inlines it.
       - key: VITE_API_URL
-        value: https://sudoku-api.onrender.com
+        sync: false
     routes:
       - type: rewrite
         source: /*
@@ -60,7 +63,7 @@ services:
     staticPublishPath: ./dist
     envVars:
       - key: VITE_API_URL
-        value: https://canvas-api.onrender.com
+        sync: false
     routes:
       - type: rewrite
         source: /*
