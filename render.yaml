@@ -15,7 +15,7 @@ services:
   - type: web
     name: sudoku-api
     runtime: python
-    plan: free                      # bump to starter ($7/mo) when cold starts matter
+    plan: starter                   # $7/mo, always on (no cold starts)
     rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
@@ -27,7 +27,7 @@ services:
   - type: web
     name: canvas-api
     runtime: python
-    plan: free                      # bump to starter once teachers rely on it
+    plan: starter                   # $7/mo, always on (no cold starts)
     rootDir: backend-canvas
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
