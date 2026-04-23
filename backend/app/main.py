@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -15,12 +17,21 @@ from .solver import EXAMPLE_BOARD, SoftConfig, solve
 
 app = FastAPI(title="Sudoku Explainer", version="0.3.0")
 
+
+# Origins allowed to call the API. Local dev hosts are baked in; production
+# origins are appended from the SUDOKU_ALLOWED_ORIGINS env var (comma-
+# separated) so the Render-assigned frontend URL can be wired in without a
+# code change.
+_DEFAULT_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+_extra = os.environ.get("SUDOKU_ALLOWED_ORIGINS", "")
+_extra_origins = [o.strip() for o in _extra.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=_DEFAULT_ORIGINS + _extra_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
